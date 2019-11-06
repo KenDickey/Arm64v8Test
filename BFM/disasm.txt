@@ -1,0 +1,14 @@
+ asm ( "BFI  X0, XZR, #6, #8" ); /* #lsb, #width */
+objdump -d ->
+ 840:	b37a1fe0 	bfc	x0, #6, #8
+Encoding (32 bit Opcode):
+   3         2         1
+  10987654321098765432109876543210
+ "10110011011110100001111111100000"
+  * 64 bit
+    ** BFM
+           [21..16]=R, [15..10]=S
+            111010=58    0111=7
+                       XZR    X0
+   (s < r) => DestOffset=RegSize-R=6, Width=Span=S+1=8 
+

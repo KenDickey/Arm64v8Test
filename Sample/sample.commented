@@ -1,0 +1,56 @@
+main:
+stp x29, x30, [sp, -80]! ;save register into sp-80 and sp-88, and free memory for array
+;remember the Pre-indexed addressing
+add x29, sp, 0 ; frame pointer = stack pointer
+str x19, [sp,16] ;store r19 - remember Base plus offset
+;first loop
+str wzr, [x29,76] ;i=0 -> wzr: zero register
+b .L2 ;branch to label
+.L3:
+adrp x0, v ;calc label address --> dump: adrp x0, 410000
+add x1, x0, :lo12:v ; --> dump: add x1, x0, #0x918 see above 0x410918 dump
+ldrsw x0, [x29,76] ;load signed word (i variable)
+lsl x0, x0, 2 ;logical shift left (as mult for 2^2), it need to calc i-offset
+add x0, x1, x0
+ldr w19, [x0] ; w19 = v[i]
+ldr w0, [x29,76] ;remember [x29,76] is i
+;remeber w0 is paramer register
+mov w1, 5 ;w1 is a param register
+bl add ;call add(w0, w1)
+mul w1, w19, w0 ;w0 after a bl has result value
+;w1 = v[i] * add(w0,w1)
+add x2, x29, 32 ;array base address: FP+32
+ldrsw x0, [x29,76] ;load i variable
+lsl x0, x0, 2 ;calc the
+add x0, x2, x0 ;array[i] offset as for v[i]
+str w1, [x0] ;save w1 into x0 address
+ldr w0, [x29,76]
+add w0, w0, 1 ; i += 1
+str w0, [x29,76]
+.L2:
+ldr w0, [x29,76]
+cmp w0, 9
+ble .L3 ; if i <= 9 re-start loop
+;end of first for cicle
+mov w0, 0 ;w0 is the result register in this case
+ldr x19, [sp,16] ;re-load old x19 value
+ldp x29, x30, [sp], 80 ;re-load old frame pointer and return address
+.size main, .-main
+.section .rodata
+.align 2
+.global add
+.type add, %function
+add:
+;start of generic prologue
+sub sp, sp, #16 ;free memory for 2 register
+str w0, [sp,12] ; save the first param
+str w1, [sp,8] ;save the second param
+;end of prologue
+;code
+ldr w1, [sp,12] ;load the first param
+ldr w0, [sp,8] ;load second param
+add w0, w1, w0 ;w0 has the result value
+;epilogue
+add sp, sp, 16 ;free the stack
+ret ;return to address in x30
+.size add, .-add

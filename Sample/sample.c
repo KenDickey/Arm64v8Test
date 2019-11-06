@@ -1,0 +1,18 @@
+/*
+gcc -march=armv8-a sample.c -g --save-temps -o sample
+objdump -d -S sample >sample.asm
+*/
+#include "stdio.h"
+static int v[] = {1,2,3,4,5,6,7,8,9,10};
+void print(int i);
+int add(int v, int t);
+int main() {
+int i;
+int array[10];
+for(i=0; i < 10; i++)
+array[i] = v[i] * (add(i,5));
+return 0;
+}
+int add(int v, int t) {
+ return v + t;
+}

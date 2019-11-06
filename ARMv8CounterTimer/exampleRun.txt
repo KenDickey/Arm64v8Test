@@ -1,0 +1,43 @@
+## Sample values of aarch64 CounterTimer reading
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./frequency 
+
+Timer Frequency is 24000000 Hz 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6181221055 = 0xFFFFFC8A9318 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6224391728 = 0xFFFFFFF87328 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6266635008 = 0xFFFFF047CF38 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6294658773 = 0xFFFFD01C8E08 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6316739226 = 0xFFFFC35B1438 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6334977540 = 0xFFFFC602EC58 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6353792892 = 0xFFFFC41BDE68 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6386440845 = 0xFFFFFDD12CE8 
+
+Armbian:aarch64:~/arm64Test/Timers >>> ./timer
+
+Virtual Timer Value is 6407370864 = 0xFFFFC6E0B818 
+
+Armbian:aarch64:~/arm64Test/Timers >>> 

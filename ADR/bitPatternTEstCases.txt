@@ -1,0 +1,10 @@
+
+== AArch64 Instructions for immediate test patterns:
+
+00 11 22 AA    orn x0, x8, x2, lsl #4
+DD CC BB AA    orn x29, x6, x27, asr #51
+00 AA 00 AA    orr x0, x16, x0, lsl #42
+11 AA 11 AA    orr x17, x16, x17, lsl #42
+22 BB 11 AA    orr x2, x25, x17, lsl #46
+33 22 11 AA    orr x19, x17, x17, lsl #8
+

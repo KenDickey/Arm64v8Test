@@ -1,0 +1,9 @@
+sizeof(ptr) = 8
+sizeof(int) = 4
+sizeof(short) = 2
+sizeof(long) = 8
+sizeof(long long) = 8
+sizeof(size_t) = 8
+sizeof(ptrdiff_t) = 8
+sizeof(wchar_t) = 4
+sizeof(time_t) = 8
