@@ -1,5 +1,8 @@
-;;; Scheme "asm.sch" aarch64 assembler
-;;;
+;;;FILE: "asm.sch"
+;;;IMPLEMENTS: simple aarch64/arm64 assembler
+;;;LANGUAGE: Guile Scheme
+;;;AUTHOR: Kenneth A Dickey
+;;;COPYRIGHT 2019 Kenneth A Dickey
 
 ;; helpers
 
@@ -60,36 +63,6 @@
 
 ;; ========================================================== ;;
 ;;; REGISTERS
-
-(define condition-code-alist
-  ;; Negative Zero Carry oVerflow = NZCV
-  '( [EQ . #b0000] ; Z=1 Equal
-     [NE . #b0001] ; Z=0 Not Equal
-     [CS . #b0010] ; C=1 Carry Set
-     [HS . #b0010] ; Higher or Same == CS
-     [CC . #b0011] ; C=0 Carry Clear
-     [LO . #b0011] ; Unsigned Less Than == CC
-     [MI . #b0100] ; N=1 Minus/Negative
-     [PL . #b0101] ; N=0 Plus or Zero
-     [VS . #b0110] ; V=1 Signed oVerflow
-     [VC . #b0111] ; V=0 No Signed oVerflow
-     [HI . #b1000] ; C=1 && Z=0 Greater Than
-     [LS . #b1001] ; C=0 $$ Z=1 Less or Same/Equal
-     [GE . #b1010] ; signed N=V  Greater or Equal
-     [LT . #b1011] ; signed N!=V Less Than
-     [GT . #b1100] ; signed Z=0 && N!=V  Greater Than
-     [LE . #b1101] ; signed Z=1 && N!=V Less than or Equal
-     [AL . #b1110] ; ALways [NZCV ignored]
-;;   [NV . #b1111] ; ALways -- NB: wacky alias !!
-) )
-
-(define ccname->encoding
-  (alist-assq condition-code-alist
-              "unrecognized condition code:"))
-
-(define encoding->ccname
-  (alist-rassq condition-code-alist
-              "unrecognized condition code:"))
 
 ;;; C call ABI:
 ;;;  Register usage: [Xn=>Double[64bits], Wn=>Word[32bits]]
@@ -187,8 +160,40 @@
   (alist-assq float-regs-alist
               "unrecognized register name:"))
 
+
 ;; ========================================================== ;;
 ;;; INSTRUCTION ENCODINGS
+
+(define condition-code-alist
+  ;; Negative Zero Carry oVerflow = NZCV
+  '( [EQ . #b0000] ; Z=1 Equal
+     [NE . #b0001] ; Z=0 Not Equal
+     [CS . #b0010] ; C=1 Carry Set
+     [HS . #b0010] ; Higher or Same == CS
+     [CC . #b0011] ; C=0 Carry Clear
+     [LO . #b0011] ; Unsigned Less Than == CC
+     [MI . #b0100] ; N=1 Minus/Negative
+     [PL . #b0101] ; N=0 Plus or Zero
+     [VS . #b0110] ; V=1 Signed oVerflow
+     [VC . #b0111] ; V=0 No Signed oVerflow
+     [HI . #b1000] ; C=1 && Z=0 Greater Than
+     [LS . #b1001] ; C=0 $$ Z=1 Less or Same/Equal
+     [GE . #b1010] ; signed N=V  Greater or Equal
+     [LT . #b1011] ; signed N!=V Less Than
+     [GT . #b1100] ; signed Z=0 && N!=V  Greater Than
+     [LE . #b1101] ; signed Z=1 && N!=V Less than or Equal
+     [AL . #b1110] ; ALways [NZCV ignored]
+;;   [NV . #b1111] ; ALways -- NB: wacky alias !!
+) )
+
+(define ccname->encoding
+  (alist-assq condition-code-alist
+              "unrecognized condition code:"))
+
+(define encoding->ccname
+  (alist-rassq condition-code-alist
+              "unrecognized condition code:"))
+
 
 ;;; Opcode Bits [28..25]  x => specified elsewhere
 ;; ; 3         2         1         0
@@ -200,6 +205,7 @@
 ;;     x111 - Data Processing -- SIMD/Floating Point
 
 
+;; ========================================================== ;;
 ;;; INTEGER OPERATIONS
 
 ;;; Integer Data Processing, Immediate
@@ -294,6 +300,7 @@
 ;;           01 -- imm16 LSL 16
 ;;           10 -- imm16 LSL 32
 ;;           11 -- imm16 LSL 48
+
 (define (MOVN rdest immed16 shift-amt)
   (when (shift-amt > #b11)
     (error "MOVN can only shift 0/16/32/48 => 2 bits" shift-amt))
@@ -332,37 +339,37 @@
 ;;   10 = EOR  (Excusive OR)
 ;;   11 = ANDS (S => Set CCs) [Alias: TST (immediate) when Rdest is ZR=#b11111]
 
-(define (AND rdest rsrc imm12)
+(define (ANDi rdest rsrc imm12)
   (gather-bits
    [1001001000 22]
    [imm12      10]
    [rsrc        5]
    [rdest       0]))
 
-(define (ANDCC rdest rsrc imm12)
+(define (ANDiCC rdest rsrc imm12) ;; ANDS
   (gather-bits
    [1111001000 22]
    [imm12      10]
    [rsrc        5]
    [rdest       0]))
 
-(define (ORR rdest rsrc imm12) ;; ior
+(define (ORRi rdest rsrc imm12) ;; ior
   (gather-bits
    [1011001000 22]
    [imm12      10]
    [rsrc        5]
    [rdest       0]))
 
-(define IOR ORR)
+(define IORi ORRi)
 
-(define (EOR rdest rsrc imm12) ;; xor
+(define (EORi rdest rsrc imm12) ;; xor
   (gather-bits
    [1101001000 22]
    [imm12      10]
    [rsrc        5]
    [rdest       0]))
 
-(define XOR EOR)
+(define XORi EOR)
 
 ;;; Logical Shifted Register
 ;; ; 3         2         1         0
