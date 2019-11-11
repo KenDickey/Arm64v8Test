@@ -232,19 +232,19 @@
 ;; ADRP => 4K Page -- independent of Virtual Memory granularity
 (define (ADR rdest immed19offset)
   (gather-bits
-;  [0 31]
+;  [#b0     31]
    [(logand #b11   immed19offset) 29] ;; lower 2 bits
-   [10000 24] ; opcode
+   [#b10000 24] ; opcode
    [(logand #x7fffc immed19offset) 3] ;; upper 17 bits
-   [rdest 0]))
+   [rdest    0]))
 
 (define (ADRP rdest immed19offset)
   (gather-bits
-   [1 31]
+   [#b1     31]
    [(logand #b11   immed19offset) 29] ;; lower 2 bits
-   [10000 24] ; opcode
+   [#b10000 24] ; opcode
    [(logand #x7fffc immed19offset) 3] ;; upper 17 bits
-   [rdest 0]))
+   [rdest    0]))
 
 ;;; ADD/SUB Immediate
 ;; ; 3         2         1         0
@@ -261,35 +261,35 @@
 
 (define (ADDi rdest rsrc imm12 left-shift12?)
   (gather-bits
-   [100100010 23]
+   [#b100100010 23]
    [(if left-shift12? 1 0) 22]
-   [immed12 11]
-   [rsrc     5]
-   [rdest    0]))
+   [immed12     11]
+   [rsrc         5]
+   [rdest        0]))
 
 (define (ADDiCC rdest rsrc imm12 left-shift12?)
   (gather-bits
-   [101100010 23]
+   [#b101100010 23]
    [(if left-shift12? 1 0) 22]
-   [immed12 11]
-   [rsrc     5]
-   [rdest    0]))
+   [immed12     11]
+   [rsrc         5]
+   [rdest        0]))
 
 (define (SUBi rdest rsrc imm12 left-shift12?)
   (gather-bits
-   [110100010 23]
+   [#b110100010 23]
    [(if left-shift12? 1 0) 22]
-   [immed12 11]
-   [rsrc     5]
-   [rdest    0]))
+   [immed12     11]
+   [rsrc         5]
+   [rdest        0]))
 
 (define (SUBiCC rdest rsrc imm12 left-shift12?)
   (gather-bits
-   [111100010 23]
+   [#b111100010 23]
    [(if left-shift12? 1 0) 22]
-   [immed12 11]
-   [rsrc     5]
-   [rdest    0]))
+   [immed12     11]
+   [rsrc         5]
+   [rdest        0]))
 
 ;;; Move Wide Immediate [MOV*]
 ;; ; 3         2         1         0
@@ -307,28 +307,28 @@
   (when (shift-amt > #b11)
     (error "MOVN can only shift 0/16/32/48 => 2 bits" shift-amt))
   (gather-bits
-   [100100101 24]
-   [shift-amt 21]
-   [immed16    5]
-   [rdest      0]))
+   [#b100100101 24]
+   [shift-amt   21]
+   [immed16      5]
+   [rdest        0]))
 
 (define (MOVZ rdest immed16 shift-amt)
   (when (shift-amt > #b11)
     (error "MOVZ can only shift 0/16/32/48 => 2 bits" shift-amt))
   (gather-bits
-   [110100101 24]
-   [shift-amt 21]
-   [immed16    5]
-   [rdest      0]))
+   [#b110100101 24]
+   [shift-amt   21]
+   [immed16      5]
+   [rdest        0]))
 
 (define (MOVK rdest immed16 shift-amt)
   (when (shift-amt > #b11)
     (error "MOVK can only shift 0/16/32/48 => 2 bits" shift-amt))
   (gather-bits
-   [111100101 24]
-   [shift-amt 21]
-   [immed16    5]
-   [rdest      0]))
+   [#b111100101 24]
+   [shift-amt   21]
+   [immed16      5]
+   [rdest        0]))
 
 ;;; Logical Immediate
 ;; ; 3         2         1         0
@@ -343,33 +343,33 @@
 
 (define (ANDi rdest rsrc imm12)
   (gather-bits
-   [1001001000 22]
-   [imm12      10]
-   [rsrc        5]
-   [rdest       0]))
+   [#b1001001000 22]
+   [imm12        10]
+   [rsrc          5]
+   [rdest         0]))
 
 (define (ANDiCC rdest rsrc imm12) ;; ANDS
   (gather-bits
-   [1111001000 22]
-   [imm12      10]
-   [rsrc        5]
-   [rdest       0]))
+   [#b1111001000 22]
+   [imm12        10]
+   [rsrc          5]
+   [rdest         0]))
 
 (define (ORRi rdest rsrc imm12) ;; ior
   (gather-bits
-   [1011001000 22]
-   [imm12      10]
-   [rsrc        5]
-   [rdest       0]))
+   [#b1011001000 22]
+   [imm12        10]
+   [rsrc          5]
+   [rdest         0]))
 
 (define IORi ORRi)
 
 (define (EORi rdest rsrc imm12) ;; xor
   (gather-bits
-   [1101001000 22]
-   [imm12      10]
-   [rsrc        5]
-   [rdest       0]))
+   [#b1101001000  22]
+   [imm12        10]
+   [rsrc          5]
+   [rdest         0]))
 
 (define XORi EORi)
 
@@ -398,99 +398,99 @@
 
 (define (AND rdest ra rb imm6 shift-amt)
   (gather-bits
-   [10001010  24]
-   [shift-amt 22]
-   [0         21]
-   [ra        16]
-   [imm6      10]
-   [rb         5]
-   [rdest      0]))
+   [#b10001010  24]
+   [shift-amt   22]
+   [#b0         21]
+   [ra          16]
+   [imm6        10]
+   [rb           5]
+   [rdest        0]))
 
 (define (ANDCC rdest ra rb imm6 shift-amt)
   (gather-bits
-   [11101010  24]
-   [shift-amt 22]
-   [0         21]
-   [ra        16]
-   [imm6      10]
-   [rb         5]
-   [rdest      0]))
+   [#b11101010  24]
+   [shift-amt   22]
+   [#b0         21]
+   [ra          16]
+   [imm6        10]
+   [rb           5]
+   [rdest        0]))
 
 (define (BIC rdest ra rb imm6 shift-amt)
   (gather-bits
-   [10001010  24]
-   [shift-amt 22]
-   [1         21]
-   [ra        16]
-   [imm6      10]
-   [rb         5]
-   [rdest      0]))
+   [#b10001010  24]
+   [shift-amt   22]
+   [#b1         21]
+   [ra          16]
+   [imm6        10]
+   [rb           5]
+   [rdest        0]))
 
 (define (BICCC rdest ra rb imm6 shift-amt)
   (gather-bits
-   [11101010  24]
-   [shift-amt 22]
-   [1         21]
-   [ra        16]
-   [imm6      10]
-   [rb         5]
-   [rdest      0]))
+   [#b11101010  24]
+   [shift-amt   22]
+   [#b1         21]
+   [ra          16]
+   [imm6        10]
+   [rb           5]
+   [rdest        0]))
 
 (define (ORR rdest ra rb imm6 shift-amt)
   (gather-bits
-   [10101010  24]
-   [shift-amt 22]
-   [0         21]
-   [ra        16]
-   [imm6      10]
-   [rb         5]
-   [rdest      0]))
+   [#b10101010  24]
+   [shift-amt   22]
+   [#b0         21]
+   [ra          16]
+   [imm6        10]
+   [rb           5]
+   [rdest        0]))
 
 (define IOR ORR)
 
 (define (ORN rdest ra rb imm6 shift-amt)
   (gather-bits
-   [10101010  24]
-   [shift-amt 22]
-   [1         21]
-   [ra        16]
-   [imm6      10]
-   [rb         5]
-   [rdest      0]))
+   [#b10101010  24]
+   [shift-amt   22]
+   [#b1         21]
+   [ra          16]
+   [imm6        10]
+   [rb           5]
+   [rdest        0]))
 
 (define IOR-not ORN)
 
 (define (EOR rdest ra rb imm6 shift-amt)
   (gather-bits
-   [11001010  24]
-   [shift-amt 22]
-   [0         21]
-   [ra        16]
-   [imm6      10]
-   [rb         5]
-   [rdest      0]))
+   [#b11001010  24]
+   [shift-amt   22]
+   [#b0           21]
+   [ra          16]
+   [imm6        10]
+   [rb           5]
+   [rdest        0]))
 
 (define XOR EOR)
 
 (define (EON rdest ra rb imm6 shift-amt)
   (gather-bits
-   [11001010  24]
-   [shift-amt 22]
-   [1         21]
-   [ra        16]
-   [imm6      10]
-   [rb         5]
-   [rdest      0]))
+   [#b11001010  24]
+   [shift-amt  22]
+   [#b1          21]
+   [ra         16]
+   [imm6       10]
+   [rb          5]
+   [rdest       0]))
 
 (define XOR-not EON)
 
 (define (MOV rdest rsrc)
   ;; (ORR rdest rsrc (regname->encoding 'XZR) 0 0)
   (gather-bits
-   [10101010000 21]
-   [rsrc        16]
-   [#b11111      5] ;; (regname->encoding 'XZR)
-   [rdest        0]))
+   [#b10101010000 21]
+   [rsrc         16]
+   [#b11111       5] ;; (regname->encoding 'XZR)
+   [rdest         0]))
 
 
 ;;; Bitfield Move Immediate [*BFM]
@@ -545,6 +545,13 @@
 ;; Cond is one of the Condition Codes (encoded as above)
 ;; Immed19 is relative to the address of THIS instruction, in the range ±1MB.
 
+(define (BCOND imm19 cond-sym) ;; e.g. B.eq -> (BCOND 64 'EQ) -> PC+64
+  (gather-bits
+   [#b01010100 24]
+   [imm19       5]
+;  [#b0         4] ; defaults to zero
+   [(ccname->encoding cond-sym) 0]))
+
 ;;; Note on Conditional Branch range
 ;;   B.cond:    +/-  1 MB
 ;;   CBZ, CBNZ: +/-  1 MB
@@ -565,6 +572,41 @@
 ;;   11 - CCMP
 ;; Compare Rn with Rm/Imm5 and set CCs
 
+(define (CCMNi reg imm5 cond-sym flags)
+  (gather-bits
+   [#b10111010010 21]
+   [imm5          16]
+   [(ccname->encoding cond-sym) 12]
+   [#b10          10]
+   [reg            5]
+   [flags          0]))
+
+(define (CCMN ra rb cond-sym flags)
+  (gather-bits
+   [#b10111010010 21]
+   [ra            16]
+   [(ccname->encoding cond-sym) 12]
+   [#b00          10]
+   [rb             5]
+   [flags          0]))
+
+(define (CCMPi reg imm5 cond-sym flags)
+  (gather-bits
+   [#b11111010010 21]
+   [imm5          16]
+   [(ccname->encoding cond-sym) 12]
+   [#b10          10]
+   [reg            5]
+   [flags          0]))
+
+(define (CCMP ra rb cond-sym flags)
+  (gather-bits
+   [#b11111010010 21]
+   [ra            16]
+   [(ccname->encoding cond-sym) 12]
+   [#b00          10]
+   [rb             5]
+   [flags          0]))
 
 ;;; Conditional Select
 ;; ; 3         2         1         0
@@ -585,7 +627,7 @@
 ;; ;10987654321098765432109876543210
 ;;; 11010101000000110010000000011111
 ;; ; Takes up space..
-
+(define NOOP #b11010101000000110010000000011111)
 
 ;;; System Register Move
 ;; ; 3         2         1         0
