@@ -61,6 +61,8 @@
               (+ 1 idx))))
 )
 
+(define list-append append)
+
 ;; ========================================================== ;;
 ;;; REGISTERS
 
@@ -123,7 +125,7 @@
   )
 
 (define scalar-regs-alist
-  (cons (XZR . 31)
+  (cons '(XZR . 31)
         (alistify
          (list-append callee-save-regnames
                       ipc-temp-regnames
@@ -369,7 +371,7 @@
    [rsrc        5]
    [rdest       0]))
 
-(define XORi EOR)
+(define XORi EORi)
 
 ;;; Logical Shifted Register
 ;; ; 3         2         1         0
@@ -393,6 +395,102 @@
 ;;; Move Register is alias of shifted ORR w XZR
 ;;; sop01010shNRmmmmmImm6-Rsrc-Rdest
 ;;  10101010000Rmmmmm0000011111Rdest - Move (Register)
+
+(define (AND rdest ra rb imm6 shift-amt)
+  (gather-bits
+   [10001010  24]
+   [shift-amt 22]
+   [0         21]
+   [ra        16]
+   [imm6      10]
+   [rb         5]
+   [rdest      0]))
+
+(define (ANDCC rdest ra rb imm6 shift-amt)
+  (gather-bits
+   [11101010  24]
+   [shift-amt 22]
+   [0         21]
+   [ra        16]
+   [imm6      10]
+   [rb         5]
+   [rdest      0]))
+
+(define (BIC rdest ra rb imm6 shift-amt)
+  (gather-bits
+   [10001010  24]
+   [shift-amt 22]
+   [1         21]
+   [ra        16]
+   [imm6      10]
+   [rb         5]
+   [rdest      0]))
+
+(define (BICCC rdest ra rb imm6 shift-amt)
+  (gather-bits
+   [11101010  24]
+   [shift-amt 22]
+   [1         21]
+   [ra        16]
+   [imm6      10]
+   [rb         5]
+   [rdest      0]))
+
+(define (ORR rdest ra rb imm6 shift-amt)
+  (gather-bits
+   [10101010  24]
+   [shift-amt 22]
+   [0         21]
+   [ra        16]
+   [imm6      10]
+   [rb         5]
+   [rdest      0]))
+
+(define IOR ORR)
+
+(define (ORN rdest ra rb imm6 shift-amt)
+  (gather-bits
+   [10101010  24]
+   [shift-amt 22]
+   [1         21]
+   [ra        16]
+   [imm6      10]
+   [rb         5]
+   [rdest      0]))
+
+(define IOR-not ORN)
+
+(define (EOR rdest ra rb imm6 shift-amt)
+  (gather-bits
+   [11001010  24]
+   [shift-amt 22]
+   [0         21]
+   [ra        16]
+   [imm6      10]
+   [rb         5]
+   [rdest      0]))
+
+(define XOR EOR)
+
+(define (EON rdest ra rb imm6 shift-amt)
+  (gather-bits
+   [11001010  24]
+   [shift-amt 22]
+   [1         21]
+   [ra        16]
+   [imm6      10]
+   [rb         5]
+   [rdest      0]))
+
+(define XOR-not EON)
+
+(define (MOV rdest rsrc)
+  ;; (ORR rdest rsrc (regname->encoding 'XZR) 0 0)
+  (gather-bits
+   [10101010000 21]
+   [rsrc        16]
+   [#b11111      5] ;; (regname->encoding 'XZR)
+   [rdest        0]))
 
 
 ;;; Bitfield Move Immediate [*BFM]
