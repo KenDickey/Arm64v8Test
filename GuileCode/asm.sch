@@ -201,6 +201,43 @@
 
 (define ccnum ccname->encoding)
 
+(define cc-invert-alist
+  ;; Negative Zero Carry oVerflow = NZCV
+  '( [EQ . NE]
+     [NE . EQ]
+     [CS . CC]
+     [HS . CC]
+     [CC . CS]
+     [LO . CS]
+     [MI . PL]
+     [PL . MI]
+     [VS . VC]
+     [VC . VS]
+     [HI . LS]
+     [LS . HI]
+     [GE . LT]
+     [LT . GE]
+     [GT . LE]
+     [LE . GT]
+) )
+
+(define cc-invert
+  (alist-assq cc-invert-alist
+              "No invert for Condition:"))
+
+
+(define shift-type-alist
+  '( [LSL . #b00]
+     [LSR . #b01]
+     [ASR . #b10]
+     [ROR . #b11]
+) )
+
+(define shift-typenum
+  (alist-assq shift-type-alist
+             "Unrecognized shift type [LSL|LSR|ASR|ROR]:"))
+
+;; ========================================================== ;;
 ;;; Opcode Bits [28..25]  x => specified elsewhere
 ;; ; 3         2         1         0
 ;; ;10987654321098765432109876543210
@@ -227,13 +264,14 @@
 ;;        111 -- Extract
 
 
-;;; PC-relative ADdress to Register
+;;; PC-relative ADdress to Register [ADR/ADRPaged]
 ;; ; 3         2         1         0
 ;; ;10987654321098765432109876543210
-;;; xLo10000------ImmHi--------Rdest
-;;  0 = ADR   CurrentPC + (Sign-extend ImmHi:ImmLo)
-;;  1 = ADRP  (CurrentPC + (Sign-extend (ImmHi:ImmLo << 12)) & ~#fff)
-;; ADRP => 4K Page -- independent of Virtual Memory granularity
+;;; 0im10000immed-high---------Rdest	ADR  (+/- 1MB)
+;; PC + (signed) immed-hi:im to Rdest ;; NB: relative to THIS instruction
+;;; 1im10000immed-high---------Rdest	ADRP (+/- 4GB)
+;; (PC + ((signed) immed-hi:im << 12)) & ~#xfff to Rdest [4K Page selection (think BIBOP)]
+
 (define (ADR rdest immed19offset)
   (gather-bits
 ;  [#b0                           31]
@@ -489,11 +527,11 @@
 (define XOR-not EON)
 
 (define (MOV rdest rsrc)
-  ;; (ORR rdest rsrc (regname->encoding 'XZR) 0 0)
+  ;; (ORR rdest rsrc 'XZR 0 0)
   (gather-bits
    [#b10101010000 21]
    [(regnum rsrc) 16]
-   [#b11111        5] ;; (regname->encoding 'XZR)
+   [#b11111        5] ;; (regnum 'XZR)
    [(regnum rdest) 0]))
 
 
@@ -549,7 +587,8 @@
 ;; Cond is one of the Condition Codes (encoded as above)
 ;; Immed19 is relative to the address of THIS instruction, in the range ±1MB.
 
-(define (BCOND imm19 cond-sym) ;; e.g. B.eq -> (BCOND 64 'EQ) -> PC+64
+(define (BCOND imm19 cond-sym)
+  ;; e.g. B.eq -> (BCOND 64 'EQ) -> if Z=1, PC := PC+64
   (gather-bits
    [#b01010100      24]
    [imm19            5]
@@ -564,6 +603,9 @@
 ;; Unconditional Branch [B, BL] is +/- 128MB
 ;; BR, BLR range is unconstrained
 
+;; CoMPare register values and set CCs
+(define (CMP ra rb shift-type shift-amt)
+  (SUBSr 'XZR ra rb shift-type shift-amt))
 
 ;;; Conditional Compare
 ;; ; 3         2         1         0
@@ -614,16 +656,67 @@
 
 ;;; Conditional Select
 ;; ; 3         2         1         0
-;; ;1098765432109765432109876543210
-;;; sO011010100RmmmmCondOpRnnnnRdest
+;; ;10987654321098765432109876543210
+;;; so011010100RelseCondOpRthenRdest
 ;;  0 - 32 bit
 ;;  1 - 64 bit
 ;;   0                  00 - CSEL
-;;   0                  01 - CINC/CSINC  ;; Alias CSET  when Rn & Rm are both ZR
-;;   1                  00 - CINV/CSINV  ;; Alias CSETM when Rn & Rm are both ZR
+;;   0                  01 - CINC/CSINC
+;;   1                  00 - CINV/CSINV
 ;;   1                  01 - CNEG/CSNEG
 ;; If Cond(ition) in CC holds,
 ;;   RDest gets Rn else Rm; as-is/incremented/inverted/negated
+
+(define (CSEL rdest rthen relse cond-sym)
+  (gather-bits
+   [#b1O011010100    21]
+   [(regnum relse)   15]
+   [(ccnum cond-sym) 12]
+   [#b00             10]
+   [(regnum rthen)    5]
+   [(regnum rdest)    0]))
+
+(define (CSINC rdest rthen relse cond-sym)
+  (gather-bits
+   [#b1O011010100    21]
+   [(regnum relse)   15]
+   [(ccnum cond-sym) 12]
+   [#b01             10]
+   [(regnum rthen)    5]
+   [(regnum rdest)    0]))
+
+(define (CSINV rdest rthen relse cond-sym)
+  (gather-bits
+   [#b11011010100    21]
+   [(regnum relse)   15]
+   [(ccnum cond-sym) 12]
+   [#b00             10]
+   [(regnum rthen)    5]
+   [(regnum rdest)    0]))
+
+(define (CSNEG rdest rthen relse cond-sym)
+  (gather-bits
+   [#b11011010100    21]
+   [(regnum relse)   15]
+   [(ccnum cond-sym) 12]
+   [#b01             10]
+   [(regnum rthen)    5]
+   [(regnum rdest)    0]))
+
+(define (CSET rdest cond-sym)
+  (CSINC rdest 'XZR 'XZR (cc-invert cond-sym)))
+
+(define (CSETM rdest cond-sym)
+  (CSINV rdest 'XZR 'XZR (cc-invert cond-sym)))
+
+(define (CINC rdest rsrc cond-sym)
+  (CSINC rdest rsrc rsrc (cc-invert cond-sym)))
+
+(define (CINV rdest rsrc cond-sym)
+  (CSINV rdest rsrc rsrc (cc-invert cond-sym)))
+
+(define (CNEG rdest rsrc cond-sym)
+  (CSNEG rdest rsrc rsrc (cc-invert cond-sym)))
 
 
 ;;; No-Operation [NOP]
@@ -765,16 +858,6 @@
 ;;  10   1   1 - LTP (SIMD/FP)    128 bit
 
 
-;;; PC Relative Address to Register [ADR/ADRPaged]
-;; ; 3         2         1         0
-;; ;10987654321098765432109876543210
-;;; 0im10000immed-high---------Rdest	ADR  (+/- 1MB)
-;; PC + (signed) immed-hi:im to Rdest ;; NB: relative to THIS instruction
-;;; 1im10000immed-high---------Rdest	ADRP (+/- 4GB)
-;; (PC + ((signed) immed-hi:im << 12)) & ~#xfff to Rdest [4K Page selection (think BIBOP)]
-
-
-
 ;;; Integer Data Processing (Register) -- Extend
 ;; ; 3         2         1         0
 ;; ;10987654321098765432109876543210
@@ -787,7 +870,8 @@
 ;;                  100 - SXTB
 ;;                  101 - SXTH
 ;;                  110 - SXTW
-;;                  111 - SXTX
+;;                  111 - SXT
+;; ;10987654321098765432109876543210
 ;;; skk01011sh0Rmmmm-Imm6-RnnnnRdest (Shifted Register)
 ;;; skkk11010000Rmmmm00000RnnnnRdest (with Carry)
 ;;  0 - 32 bit
@@ -795,7 +879,57 @@
 ;;   00         ADD  
 ;;   01         ADDS 
 ;;   10         SUB  
-;;   11         SUBS 
+;;   11         SUBS
+
+;; ADD shifted register
+(define (ADDr rdest ra rb shift-type shift-amt)
+  (gather-bits
+   [#b1           31]
+   [#b00          29]
+   [#b01011       24]
+   [(shift-typenum shift-type) 22]
+   [#b0           21]
+   [(regnum ra)   16]
+   [shft-amt      10]
+   [(regnum rb)    5]
+   [(regnum rdest) 0]))
+
+(define (ADDSr rdest ra rb shift-type shift-amt)
+  (gather-bits
+   [#b1           31]
+   [#b01          29]
+   [#b01011       24]
+   [(shift-typenum shift-type) 22]
+   [#b0           21]
+   [(regnum ra)   16]
+   [shft-amt      10]
+   [(regnum rb)    5]
+   [(regnum rdest) 0]))
+
+;; SUBtract shifted register
+(define (SUBr rdest ra rb shift-type shift-amt)
+  (gather-bits
+   [#b1           31]
+   [#b10          29]
+   [#b01011       24]
+   [(shift-typenum shift-type) 22]
+   [#b0           21]
+   [(regnum ra)   16]
+   [shft-amt      10]
+   [(regnum rb)    5]
+   [(regnum rdest) 0]))
+
+(define (SUBSr rdest ra rb shift-type shift-amt)
+  (gather-bits
+   [#b1           31]
+   [#b11          29]
+   [#b01011       24]
+   [(shift-typenum shift-type) 22]
+   [#b0           21]
+   [(regnum ra)   16]
+   [shft-amt      10]
+   [(regnum rb)    5]
+   [(regnum rdest) 0]))
 
 
 ;;; Invert Carry Flag  CFINV
