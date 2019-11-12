@@ -24,7 +24,8 @@
 
 (define-syntax gather-bits
   (syntax-rules ()
-    ((gather-bits a-pair ...) (%list-place '(a-pair ...)))))
+    ((gather-bits [lft rt] ...)
+     (%list-place (list [list lft rt] ...)))))
 
 ;; (->hex (gather-bits [1 2] [3 4] [#xff 16]))  --> "#xff0034"
 
@@ -650,7 +651,7 @@
    [#b11111010010    21]
    [(regnum ra)      16]
    [(ccnum cond-sym) 12]
-   [#b00             10]
+;  [#b00             10]
    [(regnum rb)       5]
    [flags             0]))
 
@@ -669,17 +670,17 @@
 
 (define (CSEL rdest rthen relse cond-sym)
   (gather-bits
-   [#b1O011010100    21]
-   [(regnum relse)   15]
+   [#b10011010100    21]
+   [(regnum relse)   16]
    [(ccnum cond-sym) 12]
-   [#b00             10]
+;  [#b00             10]
    [(regnum rthen)    5]
    [(regnum rdest)    0]))
 
 (define (CSINC rdest rthen relse cond-sym)
   (gather-bits
-   [#b1O011010100    21]
-   [(regnum relse)   15]
+   [#b10011010100    21]
+   [(regnum relse)   16]
    [(ccnum cond-sym) 12]
    [#b01             10]
    [(regnum rthen)    5]
@@ -688,16 +689,16 @@
 (define (CSINV rdest rthen relse cond-sym)
   (gather-bits
    [#b11011010100    21]
-   [(regnum relse)   15]
+   [(regnum relse)   16]
    [(ccnum cond-sym) 12]
-   [#b00             10]
+;  [#b00             10]
    [(regnum rthen)    5]
    [(regnum rdest)    0]))
 
 (define (CSNEG rdest rthen relse cond-sym)
   (gather-bits
    [#b11011010100    21]
-   [(regnum relse)   15]
+   [(regnum relse)   16]
    [(ccnum cond-sym) 12]
    [#b01             10]
    [(regnum rthen)    5]
@@ -885,12 +886,12 @@
 (define (ADDr rdest ra rb shift-type shift-amt)
   (gather-bits
    [#b1           31]
-   [#b00          29]
+;  [#b00          29]
    [#b01011       24]
    [(shift-typenum shift-type) 22]
-   [#b0           21]
+;  [#b0           21]
    [(regnum ra)   16]
-   [shft-amt      10]
+   [shift-amt     10]
    [(regnum rb)    5]
    [(regnum rdest) 0]))
 
@@ -900,9 +901,9 @@
    [#b01          29]
    [#b01011       24]
    [(shift-typenum shift-type) 22]
-   [#b0           21]
+;  [#b0           21]
    [(regnum ra)   16]
-   [shft-amt      10]
+   [shift-amt     10]
    [(regnum rb)    5]
    [(regnum rdest) 0]))
 
@@ -913,9 +914,9 @@
    [#b10          29]
    [#b01011       24]
    [(shift-typenum shift-type) 22]
-   [#b0           21]
+;  [#b0           21]
    [(regnum ra)   16]
-   [shft-amt      10]
+   [shift-amt     10]
    [(regnum rb)    5]
    [(regnum rdest) 0]))
 
@@ -925,9 +926,9 @@
    [#b11          29]
    [#b01011       24]
    [(shift-typenum shift-type) 22]
-   [#b0           21]
+;  [#b0           21]
    [(regnum ra)   16]
-   [shft-amt      10]
+   [shift-amt     10]
    [(regnum rb)    5]
    [(regnum rdest) 0]))
 
