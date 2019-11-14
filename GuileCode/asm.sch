@@ -306,7 +306,7 @@
   (gather-bits
    [#b100100010            23]
    [(if left-shift12? 1 0) 22]
-   [immed12                11]
+   [imm12                11]
    [(regnum rsrc)           5]
    [(regnum rdest)          0]))
 
@@ -314,7 +314,7 @@
   (gather-bits
    [#b101100010            23]
    [(if left-shift12? 1 0) 22]
-   [immed12                11]
+   [imm12                11]
    [(regnum rsrc)           5]
    [(regnum rdest)          0]))
 
@@ -322,7 +322,7 @@
   (gather-bits
    [#b110100010            23]
    [(if left-shift12? 1 0) 22]
-   [immed12                11]
+   [imm12                11]
    [(regnum rsrc)           5]
    [(regnum rdest)          0]))
 
@@ -330,7 +330,7 @@
   (gather-bits
    [#b111100010            23]
    [(if left-shift12? 1 0) 22]
-   [immed12                11]
+   [imm12                11]
    [(regnum rsrc)           5]
    [(regnum rdest)          0]))
 
@@ -605,8 +605,14 @@
 ;; BR, BLR range is unconstrained
 
 ;; CoMPare register values and set CCs
-(define (CMP ra rb shift-type shift-amt)
+(define (CMPr ra rb shift-type shift-amt)
   (SUBSr 'XZR ra rb shift-type shift-amt))
+
+(define (CMPi ra imm12)
+  (SUBiCC 'XZR ra imm12 #f))
+
+(define (CMNi ra imm12)
+  (ADDiCC 'XZR ra imm12 #f))
 
 ;;; Conditional Compare
 ;; ; 3         2         1         0
@@ -812,7 +818,7 @@
 ;;        00            00  Unscaled immediate offset
 ;;; sz111v00op1RmmmmXXXS10RnnnnRdest
 ;;        00            10  Register Offset
-;;; sz111v01op--Immed12---RnnnnRdest
+;;; sz111v01op--Imm12---RnnnnRdest
 ;;        01            xx  UnSigned Immediate Offset
 ;;  00   0  00 - STRB 
 ;;  00   0  01 - LDRB 
@@ -894,6 +900,13 @@
    [shift-amt     10]
    [(regnum rb)    5]
    [(regnum rdest) 0]))
+
+; (->bin (ADDr 'X13 'X10 'X11 'LSL 12))
+;;;              D    A    B
+;"#b10001011000010100011000101101101"
+;;; skk01011sh0Rmmmm-Imm6-RnnnnRdest (Shifted Register)
+;;              1010  1100 1011 1101
+;;               #xA    12  #xB  #xD
 
 (define (ADDSr rdest ra rb shift-type shift-amt)
   (gather-bits
