@@ -605,8 +605,14 @@
 ;; BR, BLR range is unconstrained
 
 ;; CoMPare register values and set CCs
-(define (CMP ra rb shift-type shift-amt)
+(define (CMPr ra rb shift-type shift-amt)
   (SUBSr 'XZR ra rb shift-type shift-amt))
+
+(define (CMPi ra imm12)
+  (SUBiCC 'XZR ra imm12 #f))
+
+(define (CMNi ra imm12)
+  (ADDiCC 'XZR ra imm12 #f))
 
 ;;; Conditional Compare
 ;; ; 3         2         1         0
