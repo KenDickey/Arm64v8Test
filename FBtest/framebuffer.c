@@ -21,39 +21,60 @@ Then annotated with units;  Balloon from Squeak Smalltalk image (www.squeak.org)
 
 unsigned int	screen_width_pixels, 
 		screen_height_pixels,
-		bytes_per_pixel, 
-		bytes_per_row;
+		fb_bytes_per_pixel, 
+		fb_bytes_per_row;
 
+static  struct fb_var_screeninfo vinfo;
+static  struct fb_fix_screeninfo finfo;
+
+
+static inline unsigned long fb_pixel_position(int x, int y) {
+  return (x + vinfo.xoffset) * (vinfo.bits_per_pixel / 8)
+      +  (y + vinfo.yoffset) * finfo.line_length ;
+}
+
+static inline unsigned long fb_pixel_color(int red, int green, int blue) {
+  switch (vinfo.bits_per_pixel) {
+  case 16:
+    return (((red >> 3) & 31) << 11) 
+         | (((green >> 2) & 63) <<  5)
+         | (((blue >> 3) & 31) <<  0);
+  case 24:
+  case 32:
+    return (red << 16) | (green << 8) | (blue << 0);
+  default:
+     printf("\nUnhandled framebuffer depth: %ld\n", vinfo.bits_per_pixel);
+     exit (-1 );
+  }
+}
 
 /**
  * Show an image
  */
 void showImage(char* lfb)
 {
-    int x, y;
+    int x, y, bytes_per_pixel;
     unsigned char *ptr = lfb;
+    unsigned long myPixel;
     char *data = balloon_data, pixel[4];
 
+    bytes_per_pixel = 4; /* Balloon has 32 bit pixels -> 4 bytes */
     /* draw image in mid screen */
-    ptr +=  (((screen_height_pixels - balloon_height_pixels) / 2) * bytes_per_row)
-	    + (((screen_width_pixels - balloon_width_pixels) / 2) * bytes_per_pixel);
+    ptr +=  (((screen_height_pixels - balloon_height_pixels) / 2) * fb_bytes_per_row)
+	    + (((screen_width_pixels - balloon_width_pixels) / 2) * fb_bytes_per_pixel);
 
     for (y = 0; y < balloon_height_pixels; y++) {
         for (x = 0; x < balloon_width_pixels; x++) {
-            BALLOON_PIXEL( data, pixel ); /* side effect: data += bytes_per_pixel */
-            *((unsigned int*)ptr) = *((unsigned int *)&pixel);
-            ptr += bytes_per_pixel;
+            BALLOON_PIXEL( data, pixel ); /* side effect: data += balloon's bytes_per_pixel */
+            myPixel = fb_pixel_color( pixel[0], pixel[1], pixel[2] );
+	    *((unsigned int*)(ptr + fb_pixel_position(x,y))) = *((unsigned int *)&myPixel);
         }
-	/* skip to next row, less balloon_width in bytes */
-        ptr += bytes_per_row - balloon_width_bytes;
     }
 }
 
 int main()
 {
     int fbfd = 0;
-    struct fb_var_screeninfo vinfo;
-    struct fb_fix_screeninfo finfo;
     long int screensize_bytes = 0;
     char *fbp = 0;
     int x = 0, y = 0;
@@ -83,10 +104,7 @@ int main()
 
     printf("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
 
-    if (vinfo.bits_per_pixel != 32) {
-	printf("\nYOU NEED TO: sudo fbset -depth 32\n\n");
-	exit(-1);
-    }
+    printf("Framebuffer depth: %ld\n",vinfo.bits_per_pixel);
 
     // Figure out the size of the screen in bytes
     screensize_bytes = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
@@ -95,9 +113,9 @@ int main()
     screen_height_pixels = vinfo.yres;
 
     /* bytes_per_row is  (width_pixels * depth / bits-per-byte) */
-    bytes_per_pixel = vinfo.bits_per_pixel / 8;
+    fb_bytes_per_pixel = vinfo.bits_per_pixel / 8;
 /*  bytes_per_row  = ((screen_width_pixels + 10) * bytes_per_pixel) ?WTF? */
-    bytes_per_row = finfo.line_length; /* Nota Bene !! */
+    fb_bytes_per_row = finfo.line_length; /* Nota Bene !! */
 
     // Map the device to memory
     fbp = (char *)mmap(0, screensize_bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
